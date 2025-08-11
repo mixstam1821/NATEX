@@ -1,15 +1,6 @@
 from bokeh.io import curdoc
 from bokeh.models import TabPanel, Tabs, Div
 from bokeh.layouts import column
-
-# ===== Import or define your 3 apps as functions =====
-
-# def make_main_plot():
-# Your main plot code here
-# REMOVE any curdoc().add_root() in the original
-
-
-# app.py
 import os, re, glob, warnings
 from collections import defaultdict, OrderedDict
 from pathlib import Path
@@ -1218,4 +1209,4 @@ tabs = Tabs(tabs=[main_plot_panel, downloader_panel, swiper_panel], stylesheets 
 
 # ===== Only one curdoc() =====
 curdoc().add_root(tabs)
-curdoc().title = "NATEX Tabbed App"
+curdoc().title = "NATEX"
