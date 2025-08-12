@@ -1,7 +1,15 @@
-from bokeh.io import curdoc
-from bokeh.models import TabPanel, Tabs, Div
-from bokeh.layouts import column
+from bokeh.plotting import figure
 
+from bokeh.io import curdoc
+from bokeh.layouts import column, row
+from bokeh.models import (
+    ColumnDataSource, Button, Slider, Div, TextInput, Select,
+    ColorPicker, Spinner, RadioButtonGroup,InlineStyleSheet,GlobalInlineStyleSheet,
+    FreehandDrawTool,CustomAction, CustomJS, PasswordInput,
+    TabPanel, Tabs
+)
+
+import base64
 import os, re, glob, warnings
 from collections import defaultdict, OrderedDict
 from pathlib import Path
@@ -20,98 +28,64 @@ from shapely.geometry import (
 
 from pyproj import Transformer
 
-from bokeh.io import curdoc
-from bokeh.layouts import column, row
-from bokeh.models import (
-    ColumnDataSource, Button, Slider, Div, TextInput, Select,
-    ColorPicker, Spinner, RadioButtonGroup,InlineStyleSheet,GlobalInlineStyleSheet
-)
-from bokeh.plotting import figure
+
+####################################################
+
+consumer_key = '2nqAxmdR7vCBGShDjJGALAod_4wa'
+consumer_secret = '4139hOZgSHKgXvMsxIwUtTDqVfEa'
+
+###################################################
 
 warnings.filterwarnings("ignore", category=UserWarning)
 curdoc().theme = "dark_minimal"
 base_variables = """ :host { /* CSS Custom Properties for easy theming */ --primary-color: #8b5cf6; --secondary-color: #06b6d4; --background-color: #1f2937; --surface-color: #2d2d2d; --text-color: #f9fafb; --accent-color: #f59e0b; --danger-color: #ef4444; --success-color: #10b981; --border-color: #4b5563; --hover-color: #6366f1; background: none !important; } """
 
-wait_html = """
-<div class="spin-wrapper">
-    <img src="https://raw.githubusercontent.com/mixstam1821/bokeh_showcases/refs/heads/main/assets0/2784386.png" class="spinner-img">
-    <p class="loader-msg">⏳ Loading... Stand by.</p>
-</div>
-
-<style>
-    .spin-wrapper {
-        height: 100px;
-        display: flex;
-        flex-direction: row;         /* side-by-side layout */
-        align-items: center;         /* vertical centering */
-        justify-content: center;     /* horizontal centering */
-        gap: 12px;                    /* space between spinner and text */
-    }
-    .spinner-img {
-        width: 70px;                  /* smaller spinner */
-        height: 70px;
-        animation: spin-fast 2.5s linear infinite;
-        filter: drop-shadow(0 0 6px #1a73e8);
-    }
-    @keyframes spin-fast {
-        0%   { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    .loader-msg {
-        font-size: 16px;
-        color: #ccc;
-        font-family: 'Segoe UI', sans-serif;
-        margin: 0;
-    }
-</style>
-"""
-
+wait_html = """ <div class="spin-wrapper"> <img src="https://raw.githubusercontent.com/mixstam1821/bokeh_showcases/refs/heads/main/assets0/2784386.png" class="spinner-img"> <p class="loader-msg">⏳ Loading... Stand by.</p> </div> <style> .spin-wrapper { height: 100px; display: flex; flex-direction: row;         /* side-by-side layout */ align-items: center;         /* vertical centering */ justify-content: center;     /* horizontal centering */ gap: 12px;                    /* space between spinner and text */ } .spinner-img { width: 70px;                  /* smaller spinner */ height: 70px; animation: spin-fast 2.5s linear infinite; filter: drop-shadow(0 0 6px #1a73e8); } @keyframes spin-fast { 0%   { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } .loader-msg { font-size: 16px; color: #ccc; font-family: 'Segoe UI', sans-serif; margin: 0; } </style> """
 wait_html_div = Div(text="", width=600, height=150)
 tabs_style = InlineStyleSheet(css=""" /* Main tabs container */ :host { background: #2d2d2d !important; border-radius: 14px !important; padding: 8px !important; margin: 10px !important; box-shadow: 0 6px 20px #d52bff55, 0 2px 10px rgba(0, 0, 0, 0.3) !important; border: 1px solid rgba(235, 51, 255, 0.3) !important; } /* Tab navigation bar */ :host .bk-tabs-header { background: transparent !important; border-bottom: 2px solid #00bfff !important; margin-bottom: 8px !important; } /* Individual tab buttons */ :host .bk-tab { background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%) !important; color: #00bfff !important; border: 1px solid #555 !important; border-radius: 8px 8px 0 0 !important; padding: 12px 20px !important; margin-right: 4px !important; font-family: 'Arial', sans-serif !important; font-weight: 600 !important; font-size: 0.95em !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; position: relative !important; overflow: hidden !important; } /* Tab hover effect */ :host .bk-tab:hover { background: linear-gradient(135deg, #dc1cdd 0%, #ff1493 100%) !important; color: #ffffff !important; border-color: #dc1cdd !important; box-shadow: 0 4px 15px rgba(220, 28, 221, 0.5) !important; transform: translateY(-2px) !important; } /* Active tab styling */ :host .bk-tab.bk-active { background: linear-gradient(135deg, #00bfff 0%, #0080ff 100%) !important; color: #000000 !important; border-color: #00bfff !important; box-shadow: 0 4px 20px rgba(0, 191, 255, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3) !important; transform: translateY(-1px) !important; font-weight: 700 !important; } /* Active tab glow effect */ :host .bk-tab.bk-active::before { content: '' !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%) !important; animation: shimmer 2s infinite !important; } @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } } /* Tab content area */ :host .bk-tab-content { background: transparent !important; padding: 16px !important; border-radius: 0 0 10px 10px !important; } /* Focus states for accessibility */ :host .bk-tab:focus { outline: 2px solid #00bfff !important; outline-offset: 2px !important; } /* Disabled tab state */ :host .bk-tab:disabled { background: #1a1a1a !important; color: #666 !important; cursor: not-allowed !important; opacity: 0.5 !important; } """)
-fancy_div_style = InlineStyleSheet(css=""" :host { position: relative; background: #21233a; color: #fff; border-radius: 12px; padding: 18px 28px; text-align: center; overflow: hidden; box-shadow: 0 6px 10px rgba(197, 153, 10, 0.2); } :host::after { content: ''; position: absolute; top: 0; left: -80%; width: 200%; height: 100%; background: linear-gradient(120deg, transparent 40%, rgba(255, 252, 71, 0.416) 50%, transparent 60%); animation: shimmer 2.2s infinite; pointer-events: none; border-radius: inherit; } @keyframes shimmer { 0%   { left: -80%; } 100% { left: 100%; } } """)
 gstyle = GlobalInlineStyleSheet(css=""" html, body, .bk, .bk-root {background-color: #2d2d2d; margin: 0; padding: 0; height: 100%; color: white; font-family: 'Consolas', 'Courier New', monospace; } .bk { color: white; } .bk-input, .bk-btn, .bk-select, .bk-slider-title, .bk-headers, .bk-label, .bk-title, .bk-legend, .bk-axis-label { color: white !important; } .bk-input::placeholder { color: #aaaaaa !important; } """)
-textarea_style  = InlineStyleSheet(css=base_variables + """ :host textarea { background: var(--surface-color) !important; color: var(--text-color) !important; border: 1px solid var(--border-color) !important; border-radius: 6px !important; padding: 10px 12px !important; font-size: 14px !important; font-family: inherit !important; transition: all 0.2s ease !important; resize: vertical !important; } :host textarea:focus { outline: none !important; border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important; } :host textarea::placeholder { color: #9ca3af !important; opacity: 0.7 !important; } """)
 slider_style = InlineStyleSheet(css=""" /* Host slider container */ :host { background: none !important; } /* Full track: set dark grey, but filled part will override with .noUi-connect */ :host .noUi-base, :host .noUi-target { background: #bfbfbf !important; } /* Highlighted portion of track */ :host .noUi-connect { background: #00ffe0; } /* Slider handle */ :host .noUi-handle { background: #2d2d2d; border: 2px solid #00ffe0; border-radius: 50%; width: 20px; height: 20px; } /* Handle hover/focus */ :host .noUi-handle:hover, :host .noUi-handle:focus { border-color: #ff2a68; box-shadow: 0 0 10px #ff2a6890; } /* Tooltip stepping value */ :host .noUi-tooltip { background: #2d2d2d; color: #00ffe0; font-family: 'Consolas', monospace; border-radius: 6px; border: 1px solid #00ffe0; } /* Filled (active) slider track */ :host .noUi-connect { background: linear-gradient(90deg, #ffea31 20%, #d810f7 100%) !important; /* greenish-cyan fade */ box-shadow: 0 0 10px #00ffe099 !important; } """)
-style = InlineStyleSheet(css=""" .bk-btn { background-color: #00ffe0; color: #1e1e2e; font-weight: bold; border: 10px solid #00ffe0; border-radius: 6px; transform: rotate(0deg); box-shadow: none; transition: all 0.3s ease-in-out; } /* 🟦 Hover: #1e1e2e + rotate */ .bk-btn:hover { background-color: #1e1e2e; border-color: #1e1e2e; color: #00ffe0; transform: rotate(3deg); box-shadow: 0 0 15px 3px #00ffe0; } /* 🔴 Active (click hold): red + stronger rotate */ .bk-btn:active { background-color: red; border-color: red; transform: rotate(6deg); box-shadow: 0 0 15px 3px red; } """)
 style2 = InlineStyleSheet(css=""" .bk-input { background-color: #1e1e1e; color: #d4d4d4; font-weight: 500; border: 1px solid #3c3c3c; border-radius: 5px; padding: 6px 10px; font-family: 'Consolas', 'Courier New', monospace; transition: all 0.2s ease; } /* Input Hover */ .bk-input:hover { background-color: #1e1e1e; color: #d4d4d4; font-weight: 500; border: 1.5px solid #ff3232;        /* Red border */ box-shadow: 0 0 9px 2px #ff3232cc;  /* Red glow */ border-radius: 5px; padding: 6px 10px; font-family: 'Consolas', 'Courier New', monospace; transition: all 0.2s ease; } /* Input Focus */ .bk-input:focus { background-color: #1e1e1e; color: #d4d4d4; font-weight: 500; border: 1.5px solid #ff3232; box-shadow: 0 0 11px 3px #ff3232dd; border-radius: 5px; padding: 6px 10px; font-family: 'Consolas', 'Courier New', monospace; transition: all 0.2s ease; } .bk-input:active { outline: none; background-color: #1e1e1e; color: #d4d4d4; font-weight: 500; border: 1.5px solid #ff3232; box-shadow: 0 0 14px 3px #ff3232; border-radius: 5px; padding: 6px 10px; font-family: 'Consolas', 'Courier New', monospace; transition: all 0.2s ease; } .bk-input:-webkit-autofill { background-color: #1e1e1e !important; color: #d4d4d4 !important; -webkit-box-shadow: 0 0 0px 1000px #1e1e1e inset !important; -webkit-text-fill-color: #d4d4d4 !important; } """)
 button_style = InlineStyleSheet(css=base_variables + """ :host button { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important; color: white !important; border: none !important; border-radius: 6px !important; padding: 10px 20px !important; font-size: 14px !important; font-weight: 600 !important; cursor: pointer !important; transition: all 0.2s ease !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; } :host button:hover { transform: translateY(-1px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important; background: linear-gradient(135deg, var(--hover-color), var(--primary-color)) !important; } :host button:active { transform: translateY(0) !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; } :host button:disabled { background: #6b7280 !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; } """)
 radio_style = InlineStyleSheet(css=""" /* Outer container */ :host { background: #2F2F2F !important; border-radius: 6px !important; padding: 0px !important; max-width: 1600px !important; } /* Title */ :host .bk-input-group label, :host .bk-radiobuttongroup-title { color: #f59e0b !important; font-size: 1em !important; font-family: 'Fira Code', monospace; font-weight: bold !important; margin-bottom: 8px !important; text-shadow: 0 1px 6px #f59e0b99; letter-spacing: 0.5px; } /* Button group: wrap on small screens */ :host .bk-btn-group { display: flex !important; gap: 6px !important; flex-wrap: wrap !important; justify-content: flex-start; margin-bottom: 4px; } /* Each radio button - compact style */ :host button.bk-btn { background: #23233c !important; color: #f9fafb !important; border: 1.8px solid #f59e0b !important; border-radius: 8px !important; padding: 0.3em 1em !important; min-width: 48px !important; font-size: 0.85em !important; font-family: 'Fira Code', monospace; font-weight: 500 !important; transition: border 0.13s, box-shadow 0.14s, color 0.12s, background 0.13s; box-shadow: 0 1px 4px #0002 !important; cursor: pointer !important; outline: none !important; white-space: nowrap !important; overflow: visible !important; text-overflow: unset !important; } /* Orange glow on hover */ :host button.bk-btn:hover:not(.bk-active) { border-color: #ffa733 !important; color: #ffa733 !important; box-shadow: 0 0 0 1px #ffa73399, 0 0 6px #ffa73388 !important; background: #2e2937 !important; } /* Red glow on active/focus */ :host button.bk-btn:focus, :host button.bk-btn.bk-active { border-color: #ff3049 !important; color: #ff3049 !important; background: #322d36 !important; box-shadow: 0 0 0 1px #ff304999, 0 0 9px #ff304988 !important; } /* Remove focus outline */ :host button.bk-btn:focus { outline: none !important; } """)
 
-airmass = """ <div class="airmass"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .airmass { height: 300px;width: 300px;} </style> """
+airmass = """ <div class="airmass"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/airmass.png"> <style> .airmass { height: 300px;width: 300px;} </style> """
 airmass_div = Div(text=airmass)
 
-cloudConve = """ <div class="cloudConve"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/cloudConve.png?token=GHSAT0AAAAAADC5NF4GPK2ATGJG6P2RWCLI2EZB2OA"> <style> .cloudConve { height: 300px;width: 300px;} </style> """
+cloudConve = """ <div class="cloudConve"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/cloudConve.png"> <style> .cloudConve { height: 300px;width: 300px;} </style> """
 cloudConve_div = Div(text=cloudConve)
 
 
-convectionStorms = """ <div class="convectionStorms"> <img src=""> <style> .convectionStorms { height: 300px;width: 300px;} </style> """
+convectionStorms = """ <div class="convectionStorms"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/convectionStorms.png"> <style> .convectionStorms { height: 300px;width: 300px;} </style> """
 convectionStorms_div = Div(text=convectionStorms)
 
 
-dayMicro = """ <div class="dayMicro"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .dayMicro { height: 300px;width: 300px;} </style> """
+dayMicro = """ <div class="dayMicro"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/dayMicro.png"> <style> .dayMicro { height: 300px;width: 300px;} </style> """
 dayMicro_div = Div(text=dayMicro)
 
 
-dayMicro2 = """ <div class="dayMicro2"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .dayMicro2 { height: 300px;width: 300px;} </style> """
+dayMicro2 = """ <div class="dayMicro2"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/dayMicro2.png"> <style> .dayMicro2 { height: 300px;width: 300px;} </style> """
 dayMicro2_div = Div(text=dayMicro2)
 
 
-dust = """ <div class="dust"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .dust { height: 300px;width: 300px;} </style> """
+dust = """ <div class="dust"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/dust.png"> <style> .dust { height: 300px;width: 300px;} </style> """
 dust_div = Div(text=dust)
 
 
-naturalColor = """ <div class="naturalColor"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .naturalColor { height: 300px;width: 300px;} </style> """
+naturalColor = """ <div class="naturalColor"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/naturalColor.png"> <style> .naturalColor { height: 300px;width: 300px;} </style> """
 naturalColor_div = Div(text=naturalColor)
 
 
-nightMicro = """ <div class="nightMicro"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .nightMicro { height: 300px;width: 300px;} </style> """
+nightMicro = """ <div class="nightMicro"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/nightMicro.png"> <style> .nightMicro { height: 300px;width: 300px;} </style> """
 nightMicro_div = Div(text=nightMicro)
 
 
-severeStorm = """ <div class="severeStorm"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/8ef9173df3a727cc574696b1e9d403749c194888/assets0/airmass.png?token=GHSAT0AAAAAADC5NF4H2KIVYLZXRFJLXT4M2EZBD4Q"> <style> .severeStorm { height: 300px;width: 300px;} </style> """
+severeStorm = """ <div class="severeStorm"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/severeStorm.png"> <style> .severeStorm { height: 300px;width: 300px;} </style> """
 severeStorm_div = Div(text=severeStorm)
 
-# --- composites list (UI shows all; we validate availability on rebuild) ---
+daySnowFog = """ <div class="daySnowFog"> <img src="https://raw.githubusercontent.com/mixstam1821/NATEX/refs/heads/main/assets0/saySnowFog.png"> <style> .daySnowFog { height: 300px;width: 300px;} </style> """
+daySnowFog_div = Div(text=daySnowFog)
+
 ALL_COMPOSITES = [
     "24h_microphysics","airmass","ash","cloud_phase_distinction","cloud_phase_distinction_raw",
     "cloudtop","cloudtop_daytime","colorized_ir_clouds","convection","day_microphysics",
@@ -134,14 +108,26 @@ HELP_IMAGES_MAP = {
     "natural_color": naturalColor_div,
     "night_microphysics": nightMicro_div,
     "day_severe_storms": severeStorm_div,
-    # Add more as you prepare them
+    "snow":daySnowFog_div,
 }
 
+
+
+
+
+###############################################################################
+###############################################################################
+# ------------------------------------ Map ------------------------------------
+###############################################################################
+###############################################################################
+
+
+
 # ---------------- Widgets ----------------
-w_data_glob = TextInput(title="Data glob (*.nat)", value="/home/michael/downloads_nat/*.nat", stylesheets = [style2], width = 350)
+w_data_glob = TextInput(title="Data glob (*.nat)", value="", stylesheets = [style2], width = 350)
 w_reader    = TextInput(title="Reader", value="seviri_l1b_native", stylesheets = [style2])
 w_composite = Select(title="Composite", value="natural_color", options=ALL_COMPOSITES, stylesheets = [style2])
-w_resampler = Select(title="Resampler (Plate Carrée only)", value="kd_tree", options=["nearest", "kd_tree"], stylesheets = [style2])
+w_resampler = Select(title="Resampler (Plate Carrée only)", value="nearest", options=["nearest", "kd_tree"], stylesheets = [style2])
 w_scale     = Select(title="Natural Earth scale", value="50m", options=["110m", "50m", "10m"], stylesheets = [style2])
 w_coast     = ColorPicker(title="Coastlines color", color="#ffffff", width = 80)
 
@@ -161,7 +147,6 @@ btn_apply   = Button(label="Apply", button_type="primary", width=100, stylesheet
 slider      = Slider(start=0, end=1, step=1, value=0, title="Frame", disabled=True, stylesheets = [slider_style])
 btn_play    = Button(label="▶ Play", width=80, disabled=True, stylesheets = [button_style])
 info        = Div(text="", width=520)
-# New Div for showing current date/time from the plot title
 current_datetime_div = Div(
     text="<p style='font-size:18px; color:#00ffe0; font-family:Consolas;'>—</p>",
     width=500
@@ -173,15 +158,15 @@ current_datetime_div = Div(
 
 
 # ---------------- Globals / caches ----------------
-frames: list[np.ndarray] = []         # each is (H,W) uint32 packed RGBA (flipped for bokeh)
+frames: list[np.ndarray] = []         
 titles: list[str] = []
-period_ms = 500
+period_ms = 1000
 ticker = {"handle": None}
 
 # caches
-OVERLAY_CACHE = {}    # key -> {"xs":..., "ys":...}
+OVERLAY_CACHE = {}    
 GROUP_CACHE   = {"glob": None, "groups": OrderedDict()}
-FRAME_CACHE   = {}    # key -> (frames, titles, extent, overlay_key_used)
+FRAME_CACHE   = {}    
 
 # ---------------- Geometry helpers ----------------
 def _split_antimeridian(x, y):
@@ -225,8 +210,7 @@ def lonlat_feature_to_xsys_clipped(feature, clip_poly_lonlat):
                 xs_all.extend(segx); ys_all.extend(segy)
     return xs_all, ys_all
 
-from pyproj import Transformer
-import numpy as np
+from pyproj import CRS, Transformer
 
 def _split_on_mask(x, y, mask):
     """Split sequences into contiguous segments where mask==True."""
@@ -246,7 +230,6 @@ def _split_on_mask(x, y, mask):
         xs.append(x[start:].tolist())
         ys.append(y[start:].tolist())
     return xs, ys
-import numpy as np
 
 def shift_xsys(xs, ys, dx=0.0, dy=0.0):
     # translate each segment by (dx, dy)
@@ -254,7 +237,6 @@ def shift_xsys(xs, ys, dx=0.0, dy=0.0):
     ys2 = [list(np.asarray(seg, float) + dy) for seg in ys]
     return xs2, ys2
 
-from pyproj import CRS, Transformer
 
 def projected_feature_to_xsys(feature, area, extent_proj):
     x0, y0, x1, y1 = extent_proj
@@ -331,7 +313,7 @@ def build_frame(files, reader, composite, proj_mode, area_def_pc, resampler, roi
     if proj_mode == "pc":
         png_path = nat_file.with_name(f"{nat_file.stem}_{composite}_pc.png")
         rs = scn.resample(area_def_pc, resampler=resampler,
-                        radius_of_influence=roi if resampler == "kd_tree" else None)
+                        radius_of_influence=roi if resampler == "nearest" else None)
         da = rs[composite]
         rs.save_dataset(composite, filename=str(png_path), writer="simple_image")
         pil = Image.open(png_path).convert("RGBA")
@@ -345,24 +327,29 @@ def build_frame(files, reader, composite, proj_mode, area_def_pc, resampler, roi
         da = scn[composite]
         scn.save_dataset(composite, filename=str(png_path), writer="simple_image")
         # Open with PIL
-        img = Image.open(png_path)
+        # img = Image.open(png_path)
 
-        # Flip vertically
-        img_flipped = img.transpose(Image.FLIP_TOP_BOTTOM).transpose(Image.FLIP_LEFT_RIGHT)
+        # # Flip vertically
+        # img_flipped = img.transpose(Image.FLIP_TOP_BOTTOM).transpose(Image.FLIP_LEFT_RIGHT)
 
-        # Overwrite the file
-        img_flipped.save(png_path)
+        # # Overwrite the file
+        # img_flipped.save(png_path)
 
         pil = Image.open(png_path).convert("RGBA")
         rgba = np.array(pil)
         view = rgba.view(np.uint32).reshape(rgba.shape[0], rgba.shape[1])
-        view = np.fliplr(view)
+        view = np.flipud(view)
 
 
     area = da.attrs["area"]
     extent = tuple(area.area_extent)
     title = Path(files[0]).name
     return view, title, extent, area
+
+
+
+
+
 
 def flip_overlays_xy(xs, ys, x0, x1, y0, y1):
     """Flip overlays vertically and horizontally within [x0,x1]×[y0,y1]."""
@@ -378,229 +365,273 @@ def flip_overlays_xy(xs, ys, x0, x1, y0, y1):
 # ---------------- Rebuild pipeline ----------------
 
 def rebuild(event=None):
-    def finish_rebuild(extent, overlay_key_used, first_area, scale, proj_mode, composite, resampler):
-        # Build overlays if needed
-        x0, y0, x1, y1 = extent
-        if overlay_key_used not in OVERLAY_CACHE:
-            coast_feat = cfeature.NaturalEarthFeature("physical", "coastline", scale, facecolor="none")
-            bord_feat  = cfeature.NaturalEarthFeature("cultural", "admin_0_boundary_lines_land", scale, facecolor="none")
-
-            if proj_mode == "pc":
-                clip_box_ll = box(x0, y0, x1, y1)
-                cx, cy = lonlat_feature_to_xsys_clipped(coast_feat, clip_box_ll)
-                bx, by = lonlat_feature_to_xsys_clipped(bord_feat, clip_box_ll)
-            else:
-                cx, cy = projected_feature_to_xsys(coast_feat, first_area, (x0, y0, x1, y1))
-                bx, by = projected_feature_to_xsys(bord_feat,  first_area, (x0, y0, x1, y1))
-                cx, cy = flip_overlays_xy(cx, cy, x0, x1, y0, y1)
-                bx, by = flip_overlays_xy(bx, by, x0, x1, y0, y1)
-                cx, cy = shift_xsys(cx, cy, +1.1139e7, +1.1139e7)
-                bx, by = shift_xsys(bx, by, +1.1139e7, +1.1139e7)
-
-            OVERLAY_CACHE[overlay_key_used] = {"coast_xs": cx, "coast_ys": cy, "bord_xs": bx, "bord_ys": by}
-
-        ov = OVERLAY_CACHE[overlay_key_used]
-        coast_src.data.update(xs=ov["coast_xs"], ys=ov["coast_ys"])
-        bord_src.data.update(xs=ov["bord_xs"],  ys=ov["bord_ys"])
-
-        # Update plot
-        img_source.data.update(image=[frames[0]], x=[x0], y=[y0], dw=[x1 - x0], dh=[y1 - y0])
-        
-        if proj_mode == "pc":
-            p.x_range.start, p.x_range.end = x0, x1
-            p.y_range.start, p.y_range.end = y0, y1
-        else:
-
-            p.x_range.start, p.x_range.end = 2.3e7,8e5
-            p.y_range.start, p.y_range.end = y0+1.1139e7, y1+1.1139e7
-            p.grid.visible = False
-            p.axis.visible = False
-
-        # 🔹 Force the reset tool to use these as the "reset" values
-        p.x_range.reset_start = p.x_range.start
-        p.x_range.reset_end = p.x_range.end
-        p.y_range.reset_start = p.y_range.start
-        p.y_range.reset_end = p.y_range.end
-
-
-        n = len(frames)
-        slider.start = 0
-        slider.end   = max(1, n - 1)
-        slider.value = 0
-        slider.disabled = (n < 2)
-        btn_play.disabled = (n < 2)
-        btn_play.label = "▶ Play"
-
-        p.title.text = f"{composite} — {titles[0]} ({'PC' if proj_mode=='pc' else 'Native'})"
-        info.text = f"{n} frames | {composite} | {'PC' if proj_mode=='pc' else 'Geo'} | scale={scale} | resampler={resampler if proj_mode=='pc' else 'native'}"
-        if n == 1:
-            title_text = titles[0]  # titles[0] already contains date & time
-            dt_part = title_text.split(".")[0]
-            current_datetime_div.text = f"<p style='font-size:18px; color:#00ffe0; font-family:Consolas;'>{dt_part[-14:-10]}-{dt_part[-10:-8]}-{dt_part[-8:-6]}  {dt_part[-6:-4]}:{dt_part[-4:-2]}:{dt_part[-2:]}</p> <br> <p style='font-size:18px; color:#c004ff; font-family:Consolas;'>{composite} - {title_text}</p>"
-
-
-
-
-    wait_html_div.visible = True
-    wait_html_div.text = wait_html
-
-    global frames, titles
-
-    # stop any running animation
-    if ticker["handle"] is not None:
-        curdoc().remove_periodic_callback(ticker["handle"])
-        ticker["handle"] = None
-    btn_play.label = "▶ Play"; btn_play.disabled = True
-    slider.disabled = True
-    info.text = "Rebuilding…"
-
-    # read UI values
-    data_glob = w_data_glob.value
-    reader    = w_reader.value.strip()
-    resampler = w_resampler.value
-    roi       = int(w_roi.value)
-    proj_mode = "pc" if w_projection.active == 0 else "geo"
-    lon_min = parse_float(w_lon_min.value, -180.0)
-    lat_min = parse_float(w_lat_min.value,  -90.0)
-    lon_max = parse_float(w_lon_max.value,  180.0)
-    lat_max = parse_float(w_lat_max.value,   90.0)
-    width   = int(w_width.value)
-    height  = int(w_height.value)
-    scale   = w_scale.value
-    if data_glob.startswith("file://"):
-        data_glob = data_glob[len("file://"):]
-    # group files
-    if GROUP_CACHE["glob"] != data_glob:
-        all_nat = glob.glob(data_glob)
-        by_time = defaultdict(list)
-        for f in all_nat:
-            k = slot_key(f)
-            if k:
-                by_time[k].append(f)
-        GROUP_CACHE["glob"] = data_glob
-        GROUP_CACHE["groups"] = OrderedDict(sorted(by_time.items()))
-    groups = GROUP_CACHE["groups"]
-
-    if not groups:
-        info.text = "No .nat files found for this pattern."
-        slider.start = 0; slider.end = 1; slider.value = 0
-        return
-
-    # Plate Carrée target area
-    area_def_pc = None
-    if proj_mode == "pc":
-        area_def_pc = create_area_def(
-            area_id="pc_user", proj_id="pc_user",
-            description="Plate Carrée (EPSG:4326)",
-            projection={"proj": "longlat", "datum": "WGS84", "no_defs": None},
-            width=width, height=height,
-            area_extent=(lon_min, lat_min, lon_max, lat_max)
-        )
-
-    # === Check availability in first file ===
-    first_files = next(iter(groups.values()))
+    curdoc().hold("combine")        
     try:
+        def finish_rebuild(extent, overlay_key_used, first_area, scale, proj_mode, composite, resampler):
+            # Build overlays if needed
+            x0, y0, x1, y1 = extent
+            if overlay_key_used not in OVERLAY_CACHE:
+                coast_feat = cfeature.NaturalEarthFeature("physical", "coastline", scale, facecolor="none")
+                bord_feat  = cfeature.NaturalEarthFeature("cultural", "admin_0_boundary_lines_land", scale, facecolor="none")
+
+                if proj_mode == "pc":
+                    clip_box_ll = box(x0, y0, x1, y1)
+                    cx, cy = lonlat_feature_to_xsys_clipped(coast_feat, clip_box_ll)
+                    bx, by = lonlat_feature_to_xsys_clipped(bord_feat, clip_box_ll)
+                else:
+                    cx, cy = projected_feature_to_xsys(coast_feat, first_area, (x0, y0, x1, y1))
+                    bx, by = projected_feature_to_xsys(bord_feat,  first_area, (x0, y0, x1, y1))
+                    cx, cy = flip_overlays_xy(cx, cy, x0, x1, y0, y1)
+                    bx, by = flip_overlays_xy(bx, by, x0, x1, y0, y1)
+                    cx, cy = shift_xsys(cx, cy, +1.1139e7, +1.1139e7)
+                    bx, by = shift_xsys(bx, by, +1.1139e7, +1.1139e7)
+
+                OVERLAY_CACHE[overlay_key_used] = {"coast_xs": cx, "coast_ys": cy, "bord_xs": bx, "bord_ys": by}
+
+            ov = OVERLAY_CACHE[overlay_key_used]
+            coast_src.data.update(xs=ov["coast_xs"], ys=ov["coast_ys"])
+            bord_src.data.update(xs=ov["bord_xs"],  ys=ov["bord_ys"])
+
+            # Update plot
+            img_source.data.update(image=[frames[0]], x=[x0], y=[y0], dw=[x1 - x0], dh=[y1 - y0])
+            
+            if proj_mode == "pc":
+                p.x_range.start, p.x_range.end = x0, x1
+                p.y_range.start, p.y_range.end = y0, y1
+            else:
+
+                p.x_range.start, p.x_range.end = 2.3e7,8e5
+                p.y_range.start, p.y_range.end = y0+1.1139e7, y1+1.1139e7
+                p.grid.visible = False
+                p.axis.visible = False
+
+            # 🔹 Force the reset tool to use these as the "reset" values
+            p.x_range.reset_start = p.x_range.start
+            p.x_range.reset_end = p.x_range.end
+            p.y_range.reset_start = p.y_range.start
+            p.y_range.reset_end = p.y_range.end
+
+
+            n = len(frames)
+            slider.start = 0
+            slider.end   = max(1, n - 1)
+            slider.value = 0
+            slider.disabled = (n < 2)
+            btn_play.disabled = (n < 2)
+            btn_play.label = "▶ Play"
+
+            p.title.text = f"{composite} — {titles[0]} ({'PC' if proj_mode=='pc' else 'Native'})"
+            info.text = f"{n} frames | {composite} | {'PC' if proj_mode=='pc' else 'Geo'} | scale={scale} | resampler={resampler if proj_mode=='pc' else 'native'}"
+            if n == 1:
+                title_text = titles[0]  # titles[0] already contains date & time
+                dt_part = title_text.split(".")[0]
+                current_datetime_div.text = f"<p style='font-size:18px; color:#00ffe0; font-family:Consolas;'>{dt_part[-14:-10]}-{dt_part[-10:-8]}-{dt_part[-8:-6]}  {dt_part[-6:-4]}:{dt_part[-4:-2]}:{dt_part[-2:]}</p> <br> <p style='font-size:18px; color:#c004ff; font-family:Consolas;'>{composite} - {title_text}</p>"
+
+
+
+
+        wait_html_div.visible = True
+        wait_html_div.text = wait_html
+
+        global frames, titles
+
+        # stop any running animation
+        if ticker["handle"] is not None:
+            curdoc().remove_periodic_callback(ticker["handle"])
+            ticker["handle"] = None
+        btn_play.label = "▶ Play"; btn_play.disabled = True
+        slider.disabled = True
+        info.text = "Rebuilding…"
+
+        # read UI values
+        data_glob = w_data_glob.value
+        reader    = w_reader.value.strip()
+        resampler = w_resampler.value
+        roi       = int(w_roi.value)
+        proj_mode = "pc" if w_projection.active == 0 else "geo"
+        lon_min = parse_float(w_lon_min.value, -180.0)
+        lat_min = parse_float(w_lat_min.value,  -90.0)
+        lon_max = parse_float(w_lon_max.value,  180.0)
+        lat_max = parse_float(w_lat_max.value,   90.0)
+        width   = int(w_width.value)
+        height  = int(w_height.value)
+        scale   = w_scale.value
+        if data_glob.startswith("file://"):
+            data_glob = data_glob[len("file://"):]
+        # group files
+        if GROUP_CACHE["glob"] != data_glob:
+            all_nat = glob.glob(data_glob)
+            by_time = defaultdict(list)
+            for f in all_nat:
+                k = slot_key(f)
+                if k:
+                    by_time[k].append(f)
+            GROUP_CACHE["glob"] = data_glob
+            GROUP_CACHE["groups"] = OrderedDict(sorted(by_time.items()))
+        groups = GROUP_CACHE["groups"]
+
+        if not groups:
+            info.text = "No .nat files found for this pattern."
+            slider.start = 0; slider.end = 1; slider.value = 0
+            return
+
+        # Plate Carrée target area
+        area_def_pc = None
+        if proj_mode == "pc":
+            area_def_pc = create_area_def(
+                area_id="pc_user", proj_id="pc_user",
+                description="Plate Carrée (EPSG:4326)",
+                projection={"proj": "longlat", "datum": "WGS84", "no_defs": None},
+                width=width, height=height,
+                area_extent=(lon_min, lat_min, lon_max, lat_max)
+            )
+
+        # # === Check availability in first file ===
+        # first_files = next(iter(groups.values()))
+        # try:
+        #     tmp = Scene(reader=reader, filenames=first_files)
+        #     available_first = set(tmp.available_composite_names())
+        # except Exception as e:
+        #     info.text = f"Could not inspect composites: {e}"
+        #     slider.start = 0; slider.end = 1; slider.value = 0
+        #     return
+
+        # if w_composite.value not in available_first:
+        #     info.text = (f"Composite '{w_composite.value}' not available in first file. "
+        #                 f"Available: {', '.join(sorted(available_first)) or 'none'}")
+        #     slider.start = 0; slider.end = 1; slider.value = 0
+        #     return
+
+        # # === Dynamically populate composite dropdown ===
+        # composites_per_file = []
+        # for f in groups.values():
+        #     try:
+        #         scn = Scene(reader=reader, filenames=f)
+        #         comps = set(scn.available_composite_names())
+        #         composites_per_file.append(comps)
+        #     except Exception as e:
+        #         print(f"Failed reading {f}: {e}")
+
+        # if not composites_per_file:
+        #     info.text = "No composites found in files."
+        #     slider.start = 0; slider.end = 1; slider.value = 0
+        #     return
+
+        # common_composites = sorted(set.intersection(*composites_per_file))
+        # if not common_composites:
+        #     info.text = "No common composites in all files."
+        #     slider.start = 0; slider.end = 1; slider.value = 0
+        #     return
+
+        # # Overwrite dropdown immediately
+        # w_composite.options = common_composites
+        # if w_composite.value not in common_composites:
+        #     w_composite.value = common_composites[0]
+        # composite = w_composite.value
+
+
+
+        first_files = next(iter(groups.values()))
         tmp = Scene(reader=reader, filenames=first_files)
-        available_first = set(tmp.available_composite_names())
-    except Exception as e:
-        info.text = f"Could not inspect composites: {e}"
-        slider.start = 0; slider.end = 1; slider.value = 0
-        return
+        available_first = sorted(tmp.available_composite_names())
+        w_composite.options = available_first
+        if w_composite.value not in available_first:
+            w_composite.value = available_first[0]
+        composite = w_composite.value
 
-    if w_composite.value not in available_first:
-        info.text = (f"Composite '{w_composite.value}' not available in first file. "
-                    f"Available: {', '.join(sorted(available_first)) or 'none'}")
-        slider.start = 0; slider.end = 1; slider.value = 0
-        return
 
-    # === Dynamically populate composite dropdown ===
-    composites_per_file = []
-    for f in groups.values():
-        try:
-            scn = Scene(reader=reader, filenames=f)
-            comps = set(scn.available_composite_names())
-            composites_per_file.append(comps)
-        except Exception as e:
-            print(f"Failed reading {f}: {e}")
+        # Cache key
+        key = frame_cache_key(groups, reader, composite, proj_mode, area_def_pc, resampler, roi)
 
-    if not composites_per_file:
-        info.text = "No composites found in files."
-        slider.start = 0; slider.end = 1; slider.value = 0
-        return
+        if key in FRAME_CACHE:
+            frames, titles, extent, overlay_key_used, first_area = FRAME_CACHE[key]
+            finish_rebuild(extent, overlay_key_used, first_area, scale, proj_mode, composite, resampler)
+            return
 
-    common_composites = sorted(set.intersection(*composites_per_file))
-    if not common_composites:
-        info.text = "No common composites in all files."
-        slider.start = 0; slider.end = 1; slider.value = 0
-        return
-
-    # Overwrite dropdown immediately
-    w_composite.options = common_composites
-    if w_composite.value not in common_composites:
-        w_composite.value = common_composites[0]
-    composite = w_composite.value
-
-    # Cache key
-    key = frame_cache_key(groups, reader, composite, proj_mode, area_def_pc, resampler, roi)
-
-    if key in FRAME_CACHE:
-        frames, titles, extent, overlay_key_used, first_area = FRAME_CACHE[key]
-        finish_rebuild(extent, overlay_key_used, first_area, scale, proj_mode, composite, resampler)
-        return
-
-    # Schedule processing after UI updates
-    def start_processing():
-        nonlocal composite
-        frames.clear()
-        titles.clear()
-        extent = None
-        first_area = None
-        overlay_key_used = None
-        total_frames = len(groups)
-        frame_iter = iter(groups.items())
-
-        def process_next(idx=1):
-            nonlocal extent, first_area, overlay_key_used
-            try:
-                t, files = next(frame_iter)
-            except StopIteration:
-                overlay_key_used = overlay_cache_key(
-                    proj_mode,
-                    extent,
-                    scale,
-                    (first_area.proj_dict if proj_mode == "geo" else None),
-                )
-                FRAME_CACHE[key] = (frames, titles, extent, overlay_key_used, first_area)
-                wait_html_div.visible = False
-                finish_rebuild(extent, overlay_key_used, first_area, scale, proj_mode, composite, resampler)
-                return
-            try:
-                v, ttl, ext, area = build_frame(files, reader, composite, proj_mode, area_def_pc, resampler, roi)
-            except Exception as e:
-                info.text = f"Error building frame {idx}: {e}"
-                wait_html_div.visible = False
-                return
-            frames.append(v)
-            titles.append(ttl)
-            if idx == 1:
-                extent = ext
-                first_area = area
-            curdoc().add_next_tick_callback(lambda: process_next(idx + 1))
-
-        process_next()
-
-    curdoc().add_next_tick_callback(start_processing)
+        # Schedule processing after UI updates
+        def start_processing():
+            nonlocal composite
+            frames.clear()
+            titles.clear()
+            extent = None
+            first_area = None
+            overlay_key_used = None
+            total_frames = len(groups)
 
 
 
-# ---------------- Animation helpers ----------------
-# def show_frame(i):
-#     if not frames:
-#         return
-#     i = int(i)
-#     img_source.data.update(image=[frames[i]])
-#     p.title.text = f"{w_composite.value} — {titles[i]} ({'PC' if w_projection.active==0 else 'Native'})"
+            
+            frame_iter = iter(groups.items())
 
+            def process_next(idx=1):
+                nonlocal extent, first_area, overlay_key_used
+                try:
+                    t, files = next(frame_iter)
+                except StopIteration:
+                    overlay_key_used = overlay_cache_key(
+                        proj_mode,
+                        extent,
+                        scale,
+                        (first_area.proj_dict if proj_mode == "geo" else None),
+                    )
+                    FRAME_CACHE[key] = (frames, titles, extent, overlay_key_used, first_area)
+                    wait_html_div.visible = False
+                    finish_rebuild(extent, overlay_key_used, first_area, scale, proj_mode, composite, resampler)
+                    return
+                try:
+                    v, ttl, ext, area = build_frame(files, reader, composite, proj_mode, area_def_pc, resampler, roi)
+                except Exception as e:
+                    info.text = f"Error building frame {idx}: {e}"
+                    wait_html_div.visible = False
+                    return
+                
+                # Update wait text
+                wait_html_div.text = f"""
+                <div class="spin-wrapper">
+                <img src="https://raw.githubusercontent.com/mixstam1821/bokeh_showcases/refs/heads/main/assets0/2784386.png" class="spinner-img">
+                <p class="loader-msg">⏳ Loading... Please wait<br>Processing frame {idx}/{total_frames}</p>
+                </div>
+                <style>
+                .spin-wrapper {{ 
+                height: 100px; 
+                display: flex; 
+                flex-direction: row;            /* ← make text appear to the right */
+                align-items: center; 
+                justify-content: center; 
+                gap: 12px; 
+                }}
+                .spinner-img {{ 
+                width: 70px; 
+                height: 70px; 
+                animation: spin-fast 2.5s linear infinite; 
+                filter: drop-shadow(0 0 6px #1a73e8); 
+                }}
+                @keyframes spin-fast {{ 
+                0% {{ transform: rotate(0deg); }} 
+                100% {{ transform: rotate(360deg); }} 
+                }}
+                .loader-msg {{ 
+                margin: 0; 
+                font-size: 16px; 
+                color: #ccc; 
+                font-family: 'Segoe UI', sans-serif; 
+                text-align: left;               /* optional: left-align the two lines */
+                }}
+                </style>
+                """
+
+                frames.append(v)
+                titles.append(ttl)
+                if idx == 1:
+                    extent = ext
+                    first_area = area
+                curdoc().add_next_tick_callback(lambda: process_next(idx + 1))
+
+            process_next()
+
+        curdoc().add_next_tick_callback(start_processing)
+    finally:
+        curdoc().unhold()             
 def tick():
     if len(frames) < 2:
         return
@@ -630,7 +661,6 @@ btn_play.on_click(on_play)
 slider.on_change("value", on_slider)
 
 # ---------------- Initial figure ----------------
-# Start with Plate Carrée world extents (will update on rebuild)
 X0 = float(w_lon_min.value); Y0 = float(w_lat_min.value)
 X1 = float(w_lon_max.value); Y1 = float(w_lat_max.value)
 
@@ -641,7 +671,6 @@ img_source = ColumnDataSource(data=dict(
 coast_src = ColumnDataSource(data=dict(xs=[], ys=[]))
 bord_src  = ColumnDataSource(data=dict(xs=[], ys=[]))
 
-# Time series plot for color swatches
 timeseries_src = ColumnDataSource(data=dict(frame_idx=[], color=[]))
 
 ts_plot = figure(width=1480, height=120, title="Pixel Color Timeline",
@@ -655,7 +684,7 @@ ts_plot.yaxis.visible = False
 ts_plot.xgrid.visible = False
 ts_plot.ygrid.visible = False
 
-p = figure(width=1480, height=700, match_aspect=True,
+p = figure(width=1480, height=750, match_aspect=True,
         x_range=(X0, X1), y_range=(Y0, Y1),
         output_backend="webgl",border_fill_color="#2d2d2d",background_fill_color="#2d2d2d",
         title="Ready. Choose options, then click 'Apply'.")
@@ -666,12 +695,6 @@ coast_r = p.multi_line(xs="xs", ys="ys", source=coast_src,
 bord_r  = p.multi_line(xs="xs", ys="ys", source=bord_src,
                     line_color=w_coast.color, line_width=1.2)
 
-
-
-from bokeh.models import FreehandDrawTool, ColumnDataSource, TextInput
-from bokeh.plotting import figure
-from bokeh.layouts import column
-from bokeh.io import curdoc
 
 # Data sources
 line_source = ColumnDataSource(data=dict(xs=[], ys=[], color=[]))
@@ -710,10 +733,6 @@ def add_text_on_draw(attr, old, new):
 
 line_source.on_change('data', add_text_on_draw)
 
-
-
-
-from bokeh.models import FreehandDrawTool, ColumnDataSource, TextInput, CustomAction
 # Custom inline SVG icon (undo arrow)
 svg_icon = """
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="orange">
@@ -722,9 +741,6 @@ svg_icon = """
              C19.54 16.07 20 14.58 20 13c0-4.42-3.58-8-8-8z"/>
 </svg>
 """
-import base64
-from bokeh.models import FreehandDrawTool, ColumnDataSource, TextInput, CustomAction, CustomJS
-
 # Convert SVG to base64 data URI
 icon_base64 = base64.b64encode(svg_icon.encode('utf-8')).decode('utf-8')
 icon_data_uri = f"data:image/svg+xml;base64,{icon_base64}"
@@ -831,6 +847,7 @@ p.on_event('tap', on_tap_callback)
 
 
 HELP_IMAGE_CONTAINER = column(Div(text="<p style='color:gray;'>Select a composite to see a preview</p>"))
+HELP_IMAGE_CONTAINER.children = [HELP_IMAGES_MAP['natural_color']]
 
 def update_help_image(attr, old, new):
     new = new.strip()
@@ -861,8 +878,7 @@ def show_frame(i):
 # ---------------- Layout ----------------
 
 w_composite.value.strip()
-HELP_IMAGE = airmass_div
-title = Div(text="<h2>Main Plot</h2>")
+HELP_IMAGE = naturalColor
 
 merged_div = Div(
     text="""
@@ -903,12 +919,19 @@ about_div = Div( text=""" <div style="text-align:center; color:#00ffe0; font-siz
 controls_row1 = column(w_data_glob, w_reader, w_composite, w_projection)
 controls_row2 = column(row(w_lon_min,w_lon_max), row(w_lat_min, w_lat_max))
 controls_row3 = column(row(w_coast,btn_apply, btn_play), slider,row(text_input,color_picker2),wait_html_div,current_datetime_div, info,)
-L1 = row(column(p,ts_plot,HELP_IMAGE_CONTAINER),stylesheets=[gstyle],)
-    
-    # return L1  # Replace with your actual layout
+L1 = row(column(p,ts_plot,HELP_IMAGE_CONTAINER,Div(text = 'source: EUMETSAT, https://www.jma.go.jp/jma/jma-eng/satellite/VLab/Outline_RGB_composite.pdf')),stylesheets=[gstyle],)
 
-# def make_downloader():
-# Your downloader UI here
+
+
+
+
+
+
+###############################################################################
+###############################################################################
+# -------------------------------- Downloader ---------------------------------
+###############################################################################
+###############################################################################
 
 import os
 import shutil
@@ -932,8 +955,6 @@ from bokeh.layouts import column, row, Spacer
 from bokeh.models import Button, TextInput, Div, Select, PreText
 
 # ------------------ EUMETSAT connection ------------------
-consumer_key = '2nqAxmdR7vCBGShDjJGALAod_4wa'
-consumer_secret = '4139hOZgSHKgXvMsxIwUtTDqVfEa'
 
 try:
     token = eumdac.AccessToken((consumer_key, consumer_secret))
@@ -946,6 +967,7 @@ except Exception as e:
 # ------------------ UI Elements ------------------
 title_div = Div(text="<h1>🛰️ EUMETSAT Data Downloader</h1>", width=820)
 status_div = Div(text=connection_status, width=820)
+
 
 collection_select = Select(
     title="Collection ID:",
@@ -960,7 +982,7 @@ collection_select = Select(
 )
 custom_collection = TextInput(title="Or enter custom Collection ID:", width=360,value = "EO:EUM:DAT:MSG:HRSEVIRI", placeholder="e.g., EO:EUM:DAT:MSG:HRSEVIRI", stylesheets = [style2],)
 
-start_date_input = TextInput(title="Start Date (YYYY-MM-DD)", value="2025-08-10", width=160, stylesheets = [style2])
+start_date_input = TextInput(title="Start Date (YYYY-MM-DD)", value="2025-08-11", width=160, stylesheets = [style2])
 start_hour_input = TextInput(title="Start Hour (0–23)", value="11", width=120, stylesheets = [style2])
 start_min_input = TextInput(title="Start Minute (0–59)", value="0", width=120, stylesheets = [style2])
 
@@ -978,6 +1000,63 @@ delete_button = Button(label="🗑 Delete Zips", button_type="danger", width=250
 log_display = PreText(text="Ready to download...\n", width=820, height=300)
 
 current_downloads = []
+# --- Credential Inputs ---
+username_input = PasswordInput(
+    title="Consumer Key:",
+    width=400,
+    stylesheets=[style2],
+    value = consumer_key
+)
+password_input = PasswordInput(
+    title="Consumer Secret:",
+    width=400,
+    stylesheets=[style2],
+        value = consumer_secret
+
+)
+
+
+from requests.exceptions import HTTPError
+from eumdac.collection import CollectionError
+
+
+def set_connected_ui(is_connected: bool, msg: str):
+    status_div.text = msg
+    # disable actions if not connected
+    download_button.disabled = not is_connected
+    unzip_button.disabled = not is_connected
+    delete_button.disabled = not is_connected
+
+def connect_eumetsat():
+    """Reconnect using current UI credentials and validate immediately."""
+    global datastore
+    try:
+        key = username_input.value.strip()
+        secret = password_input.value.strip()
+        token = eumdac.AccessToken((key, secret))
+        datastore = eumdac.DataStore(token)
+        _ = next(iter(datastore.collections))  # raises HTTPError 401 if invalid
+
+        set_connected_ui(True, "✅ Connected to EUMETSAT")
+    except StopIteration:
+        # means there are no collections (unlikely) but creds worked
+        set_connected_ui(True, "✅ Connected (no collections listed)")
+    except HTTPError as e:
+        # invalid credentials or auth issue
+        datastore = None
+        set_connected_ui(False, f"❌ Connection failed (auth): {e}")
+    except Exception as e:
+        datastore = None
+        set_connected_ui(False, f"❌ Connection failed: {e}")
+
+connect_eumetsat()
+
+
+# Button to re-connect if credentials change
+reconnect_button = Button(label="🔄 Connect", width=150, button_type="primary")
+reconnect_button.on_click(connect_eumetsat)
+
+
 
 
 # ------------------ Helpers ------------------
@@ -985,12 +1064,9 @@ def log_message(msg):
     ts = datetime.now().strftime("%H:%M:%S")
     log_display.text += f"[{ts}] {msg}\n"
 
-
 # ------------------ Actions ------------------
-from requests.exceptions import HTTPError
-from eumdac.collection import CollectionError
 
-# ------------------ Actions ------------------
+
 def download_files():
     global current_downloads
     if not datastore:
@@ -1134,16 +1210,32 @@ clear_log_button.on_click(clear_log)
 L2 = column(
     title_div,
     status_div,
+    row(username_input, password_input, column(Div(text="", height = 6),reconnect_button)),  
     row(custom_collection,output_dir_input),
     row(start_date_input, start_hour_input, start_min_input),
     row(end_date_input, end_hour_input, end_min_input),
     row(download_button, unzip_button, clear_log_button,delete_button),
     log_display
 )
-# curdoc().title = "EUMETSAT Data Downloader"
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+###############################################################################
+# ---------------------------------- Swiper -----------------------------------
+###############################################################################
+###############################################################################
+
+
 
 def make_swiper():
-    # Your swiper code here
     from bokeh.io import curdoc
     from bokeh.layouts import column
     from bokeh.plotting import figure
@@ -1155,8 +1247,12 @@ def make_swiper():
     import base64
     from bokeh.io.export import get_screenshot_as_png
     title = Div(text="<h2>Image Swiper</h2>")
+    flip_radio = RadioButtonGroup(
+        labels=["Flip", "No flip"],
+        active=0,  # 0 = flip, 1 = no flip
+        width=250
+    )
 
-    # ===== Initial empty image URLs =====
     url1 = ""
     url2 = ""
     def clean_path(p: str) -> Path:
@@ -1170,6 +1266,12 @@ def make_swiper():
         arr = np.array(img, dtype=np.uint8)
         view = arr.view(dtype=np.uint32).reshape((arr.shape[0], arr.shape[1]))
         view = np.flipud(view)  
+
+        # Apply flip if selected
+        if flip_radio.active == 0:
+            view = np.flipud(view)
+            view = np.fliplr(view)
+
         return view, img.width, img.height
 
     def fig_to_base64_png(fig):
@@ -1361,13 +1463,14 @@ def make_swiper():
 
     L3 = column(
             title,
+            flip_radio,
             input1,
             row(input2,load_button)
             ,
             iframe_div
         )
 
-    return L3  # Replace with your actual layout
+    return L3
 
 # ===== Create Panels =====
 main_plot_panel = TabPanel(child=L1, title="Map")
@@ -1377,23 +1480,8 @@ swiper_panel = TabPanel(child=make_swiper(), title="Swiper")
 # ===== Combine into Tabs =====
 tabs = Tabs(tabs=[main_plot_panel, downloader_panel, swiper_panel], stylesheets = [tabs_style])
 
-# ===== Only one curdoc() =====
-curdoc().add_root(row(column(merged_div,controls_row1, controls_row2, controls_row3,about_div,
-                            
-styles = {
-    'background': 'linear-gradient(145deg, #1c1c1e 55%, rgba(236, 21, 255, 0.25) 100%)',
-    'box-shadow': '0 10px 28px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(236, 21, 255, 0.25)',
-    'border-radius': '20px',
-    'border': '1px solid rgba(236, 21, 255, 0.25)', 
-    'margin-left': '4px',
-    'margin-top': '12px',
-    'margin-bottom': '6px',
-    'width': '400px',
-    'height': '1000px',
-    'position': 'relative',
-    'z-index': '10',
-    'padding': '22px',
-    'backdrop-filter': 'blur(6px)',
-},
+curdoc().add_root(row(column(merged_div,controls_row1, controls_row2, controls_row3,about_div,                           
+styles = { 'background': 'linear-gradient(145deg, #1c1c1e 55%, rgba(236, 21, 255, 0.25) 100%)', 'box-shadow': '0 10px 28px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(236, 21, 255, 0.25)', 'border-radius': '20px', 'border': '1px solid rgba(236, 21, 255, 0.25)', 'margin-left': '4px', 'margin-top': '12px', 'margin-bottom': '6px', 'width': '400px', 'height': '1000px', 'position': 'relative', 'z-index': '10', 'padding': '22px', 'backdrop-filter': 'blur(6px)', },
 stylesheets=[gstyle]),tabs))
+
 curdoc().title = "NATEX"
