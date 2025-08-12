@@ -20,6 +20,7 @@ It loads time-sorted frames, applies Satpy composites, overlays coastlines/borde
 
 ![](assets/natex.mp4)
 
+[![Watch the video](assets/thumb.jpg)](assets/natex.mp4)
 
 ![NATEX1](assets/natex1.gif)
 ![NATEX2](assets/natex2.gif)
