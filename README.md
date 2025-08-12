@@ -86,5 +86,17 @@ docker run -it --rm -p 5006:5006 natex
  
 ```
 
+## 🙌 Feedback & Contributions
+
+Got ideas, found a bug, or want a feature? I’d love to hear from you!
+
+- 🐞 **Bugs:** please open an issue with steps to reproduce and logs (if any).
+- 💡 **Feature requests:** describe your use case and the desired behavior.
+- 🔧 **Pull requests:** welcome! Keep changes focused and include a brief summary.
+
+**Thanks for trying NATEX — your feedback helps make it better! ⭐**
+
+---
+
 📜 License
 MIT License — feel free to use, modify, and share.
