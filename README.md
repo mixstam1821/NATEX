@@ -53,3 +53,13 @@ pip install \
 # from the repo root:
 bokeh serve app.py --port 5006 --show
 bokeh serve app.py --port 5006 --allow-websocket-origin="*"
+
+
+
+Docker
+# 1. Build the image
+docker build -t natex .
+
+# 2. Run the container
+docker run -it --rm -p 5006:5006 natex
+
