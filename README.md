@@ -1,28 +1,40 @@
-# NATEX — a simple `.nat` explorer (Satpy + Bokeh)
+# NATEX — a simple `.nat` files explorer
 
-**NATEX** is a fast, minimal viewer for EUMETSAT **SEVIRI** `.nat` files built with **Satpy** and **Bokeh**.  
+**NATEX** is a quick viewer for EUMETSAT `.nat` files built in **Python** with **Satpy** and **Bokeh**.  
 It loads time-sorted frames, applies Satpy composites, overlays coastlines/borders, and lets you animate, probe pixel colors, and compare PNGs with a swipe tool. It also includes a small **EUMETSAT downloader** tab.
 
 ## ✨ Features
-- Load `.nat` files via glob pattern and auto-group by timestamp
+- Load `.nat` files via glob pattern
 - Choose from many Satpy composites (e.g., `day_microphysics`, `airmass`, `natural_color`, …)
 - Plate Carrée **or** native geostationary view
-- Coastlines & country borders (Natural Earth)
+- Coastlines & country borders
 - Frame slider + play/pause animation
-- Pixel color timeline on click (alpha-aware)
-- Simple downloader for EUMETSAT collections (optional)
+- Pixel color timeline on click
+- Simple downloader for EUMETSAT collections
 - A “Swiper” tab to visually compare two PNGs
 
 ---
 
+1) Load your path either with a single .nat file or multiple by adding *.nat at the end (e.g. /home/michael/nats/*nat))
+2) Select your Composite (and/or Reader if necessary), your area (lat, lon) and the projection (Plate Carree or Geostationary).
+3) Click *Apply*. The files will be loading. It takes some time...
+   
 ![NATEX1](assets/natex1.gif)
-![NATEX2](assets/natex2.gif)
-![NATEX3](assets/natex3.gif)
-![NATEX4](assets/natex4.gif)
-![NATEX5](assets/natex5.gif)
-![NATEX6](assets/natex6.gif)
-![NATEX7](assets/natex7.gif)
 
+4) You can zoom in/out, pan and animate either with play button or the slider.
+![NATEX2](assets/natex2.gif)
+
+5) Users can change the color of the coastlines and the custom draws.
+![NATEX3](assets/natex3.gif)
+
+6) Users can draw on the plot. Click on the pen which is in the toolbar on the right of the plot. Then on the left, under the slider, type the text you want to display on the draw, and go to the map drawing for example a circle around a dust plume. You can erase the draws with the 'erase' button on the toolbar (the last one). To deactivate the pen, click again on the pen (to not be with blue mark). You can choose pan and wheel zoom to continue the exploration.
+![NATEX4](assets/natex4.gif)
+
+7) Add your credentials to download the files for the date of interest. Download, Unzip (keeps inly the .nat files) and/or remove the zip files at the end. The folder will be defined by the user in the home dir.
+![NATEX5](assets/natex5.gif)
+
+8) Finally, there is a swiper module to load the local .png and compare them. Please note, that in the folder where you downloaded the .nat files, after their loading in NATEX, the corresponding .png images will be saved in the same dir.
+![NATEX6](assets/natex6.gif)
 
 
 
