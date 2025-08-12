@@ -1,17 +1,21 @@
 # NATEX — a simple `.nat` files explorer
 
 **NATEX** is a quick viewer for EUMETSAT `.nat` files built in **Python** with **Satpy** and **Bokeh**.  
-It loads time-sorted frames, applies Satpy composites, overlays coastlines/borders, and lets you animate, probe pixel colors, and compare PNGs with a swipe tool. It also includes a small **EUMETSAT downloader** tab.
+It loads time-sorted frames, applies Satpy composites, overlays coastlines/borders, and lets you animate, probe pixel colors, and compare PNGs with a swipe tool. It also includes a simple **EUMETSAT downloader** tab.
 
 ## ✨ Features
+- 🗺 Interactive Map Viewer. View satellite composites in Plate Carrée or Geostationary projection.
 - Load `.nat` files via glob pattern
-- Choose from many Satpy composites (e.g., `day_microphysics`, `airmass`, `natural_color`, …)
+- 🌈 Multiple Composites Support for dozens of predefined composites (e.g., airmass, natural_color, dust, day_microphysics, and more).
 - Plate Carrée **or** native geostationary view
-- Coastlines & country borders
+- Coastlines & country borders with custom color.
+- Smooth zoom & pan with WebGL rendering.
 - Frame slider + play/pause animation
-- Pixel color timeline on click
-- Simple downloader for EUMETSAT collections
-- A “Swiper” tab to visually compare two PNGs
+- 📊 Pixel Color Time Series Click any pixel in the image to see how its color changes across the loaded frames.
+- 🖌 Freehand Drawing & Annotations Draw directly on the map, add custom text labels, and color your annotations. Includes Undo support with a custom toolbar icon.
+- 📡 EUMETSAT Downloader Connect to the EUMETSAT Data Store, search datasets by date/time range, and download .nat files directly.
+- 📦 File Management Built-in unzipper and zip cleaner.
+- 🔄 Image Swipe Viewer Compare two different PNG images interactively with a draggable swipe handle.
 
 ---
 
