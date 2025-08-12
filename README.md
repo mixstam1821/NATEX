@@ -15,6 +15,11 @@ It loads time-sorted frames, applies Satpy composites, overlays coastlines/borde
 
 ---
 
+<video controls muted loop playsinline width="720" poster="assets/thumb.jpg">
+  <source src="assets/demo.mp4" type="video/mp4">
+  Sorry, your browser doesn’t support embedded videos. Here’s a <a href="assets/simplescreenrecorder-2025-08-12_12.52.15.mp4">link</a>.
+</video>
+
 ![NATEX1](assets/natex1.gif)
 ![NATEX2](assets/natex2.gif)
 ![NATEX3](assets/natex3.gif)
