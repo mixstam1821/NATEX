@@ -1,50 +1,36 @@
 # ==============================
 # NATEX Dockerfile
 # ==============================
-
-# 1. Use official Python base image
 FROM python:3.11-slim
 
-# 2. Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# 3. Install system dependencies
-# Needed for cartopy, shapely, pillow, pyproj, etc.
+# System deps for cartopy/shapely/pyproj/Pillow/GDAL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libproj-dev \
-    proj-data \
-    proj-bin \
+    libproj-dev proj-data proj-bin \
     libgeos-dev \
-    libgdal-dev \
-    gdal-bin \
-    libjpeg-dev \
-    zlib1g-dev \
-    libpng-dev \
-    libfreetype6-dev \
-    libatlas-base-dev \
-    liblapack-dev \
-    libopenblas-dev \
+    libgdal-dev gdal-bin \
+    libjpeg-dev zlib1g-dev libpng-dev libfreetype6-dev \
+    libatlas-base-dev liblapack-dev libopenblas-dev \
     git \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# 4. Create app directory
 WORKDIR /app
 
-# 5. Copy requirements.txt
+# Python deps
 COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r requirements.txt
 
-# 6. Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel \
-    && pip install -r requirements.txt
-
-# 7. Copy project files
+# App code
 COPY . .
 
-# 8. Expose Bokeh server port
-EXPOSE 5006
+# Match the port you actually serve on
+EXPOSE 5098
 
-# 9. Default command to run Bokeh app
-CMD ["bokeh", "serve","NATEX.py", "--allow-websocket-origin=*", "--port", "5098", "--address", "0.0.0.0", "."]
+# IMPORTANT: remove the trailing dot!
+# Make sure the filename/case matches exactly (NATEX.py vs natex.py)
+CMD ["bokeh", "serve", "NATEX.py", "--address", "0.0.0.0", "--port", "5098", "--allow-websocket-origin=*"]
