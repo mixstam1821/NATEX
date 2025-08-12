@@ -15,6 +15,17 @@ It loads time-sorted frames, applies Satpy composites, overlays coastlines/borde
 
 ---
 
+![NATEX1](assets/natex1.gif)
+![NATEX2](assets/natex2.gif)
+![NATEX3](assets/natex3.gif)
+![NATEX4](assets/natex4.gif)
+![NATEX5](assets/natex5.gif)
+![NATEX6](assets/natex6.gif)
+![NATEX7](assets/natex7.gif)
+
+
+
+
 ## 🧰 Requirements
 
 ### Python
