@@ -15,6 +15,7 @@ It loads time-sorted frames, applies Satpy composites, overlays coastlines/borde
 
 ---
 
+<video src="assets/natex.mp4" width="320" height="240" controls></video>
 
 
 ![](assets/natex.mp4)
