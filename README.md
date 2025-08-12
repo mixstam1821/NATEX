@@ -63,3 +63,92 @@ docker build -t natex .
 # 2. Run the container
 docker run -it --rm -p 5006:5006 natex
 
+
+
+
+NATEX – Satellite .nat File Explorer & Visualizer
+NATEX (NATural Earth Explorer) is an interactive Python + Bokeh web application for exploring, visualizing, and analyzing EUMETSAT .nat satellite data.
+It provides a modern, responsive UI with real-time map rendering, image swiping, and integrated EUMETSAT data downloads.
+
+🚀 Features
+📡 EUMETSAT Downloader
+Connect to the EUMETSAT Data Store, search datasets by date/time range, and download .nat files directly.
+
+🗺 Interactive Map Viewer
+
+View satellite composites in Plate Carrée or Geostationary projection.
+
+Toggle between coastlines, borders, and custom color styling.
+
+Smooth zoom & pan with WebGL rendering.
+
+🌈 Multiple Composites
+Support for dozens of predefined composites (e.g., airmass, natural_color, dust, day_microphysics, and more).
+
+🖌 Freehand Drawing & Annotations
+Draw directly on the map, add custom text labels, and color your annotations.
+Includes Undo support with a custom toolbar icon.
+
+📊 Pixel Color Time Series
+Click any pixel in the image to see how its color changes across the loaded frames.
+
+🔄 Image Swipe Viewer
+Compare two different PNG images interactively with a draggable swipe handle.
+
+📦 File Management
+Built-in unzipper, zip cleaner, and dataset organizer.
+
+📂 App Structure
+The application is organized into three main tabs:
+
+Map – Main satellite composite viewer.
+
+Downloader – EUMETSAT data access and file management.
+
+Swiper – Side-by-side PNG image comparison tool.
+
+🛠 Tech Stack
+Python 3.11
+
+Bokeh for the interactive web UI
+
+Satpy & Pyresample for satellite data handling
+
+Cartopy & Shapely for geospatial features
+
+EUMDAC for EUMETSAT API access
+
+Pillow for image manipulation
+
+Selenium for rendering screenshots
+
+📦 Installation
+You can run NATEX either locally or inside Docker.
+
+Local Install
+bash
+Αντιγραφή
+Επεξεργασία
+git clone https://github.com/yourusername/NATEX.git
+cd NATEX
+
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+pip install --upgrade pip
+pip install -r requirements.txt
+
+bokeh serve --show --port 5006 .
+Docker
+bash
+Αντιγραφή
+Επεξεργασία
+docker build -t natex .
+docker run -it --rm -p 5006:5006 natex
+Visit: http://localhost:5006/NATEX
+
+📷 Screenshots
+(Add your UI screenshots here for visual appeal.)
+
+📜 License
+MIT License — feel free to use, modify, and share.
