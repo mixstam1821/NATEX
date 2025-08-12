@@ -15,8 +15,10 @@ It loads time-sorted frames, applies Satpy composites, overlays coastlines/borde
 
 ---
 
-![](assets/simplescreenrecorder-2025-08-12_12.52.15.mp4)
 
+<video width="320" height="240" controls>
+  <source src="assets/simplescreenrecorder-2025-08-12_12.52.15.mp4" type="video/mp4">
+</video>
 ![NATEX1](assets/natex1.gif)
 ![NATEX2](assets/natex2.gif)
 ![NATEX3](assets/natex3.gif)
