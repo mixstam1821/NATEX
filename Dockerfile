@@ -47,4 +47,4 @@ COPY . .
 EXPOSE 5006
 
 # 9. Default command to run Bokeh app
-CMD ["bokeh", "serve", "--allow-websocket-origin=*", "--port", "5006", "--address", "0.0.0.0", "."]
+CMD ["bokeh", "serve","NATEX.py", "--allow-websocket-origin=*", "--port", "5006", "--address", "0.0.0.0", "."]
