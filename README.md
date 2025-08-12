@@ -1,13 +1,12 @@
-# NATEX — a simple `.nat` files explorer
+# NATEX — Explore EUMETSAT .nat Files with Ease
 
-**NATEX** is a quick viewer for EUMETSAT `.nat` files built in **Python** with **Satpy** and **Bokeh**.  
+**NATEX** is a quick viewer for EUMETSAT `.nat` files built in **Python** with Satpy and Bokeh. It is highly inspired by EUMETView (https://view.eumetsat.int/).  
 It loads time-sorted frames, applies Satpy composites, overlays coastlines/borders, and lets you animate, probe pixel colors, and compare PNGs with a swipe tool. It also includes a simple **EUMETSAT downloader** tab.
 
 ## ✨ Features
 - 🗺 Interactive Map Viewer. View satellite composites in Plate Carrée or Geostationary projection.
 - Load `.nat` files via glob pattern
 - 🌈 Multiple Composites Support for dozens of predefined composites (e.g., airmass, natural_color, dust, day_microphysics, and more).
-- Plate Carrée **or** native geostationary view
 - Coastlines & country borders with custom color.
 - Smooth zoom & pan with WebGL rendering.
 - Frame slider + play/pause animation
