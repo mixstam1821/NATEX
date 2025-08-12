@@ -79,9 +79,9 @@ cd NATEX
 docker build -t natex .
 
 # 3) Run the container
-docker run -it --rm -p 5006:5006 natex
+docker run -it --rm -p 5098:5098 natex
 
-# 4) Visit : http://localhost:5006/NATEX
+# 4) Visit : http://localhost:5098/NATEX
  
 ```
 
