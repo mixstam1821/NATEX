@@ -980,7 +980,7 @@ collection_select = Select(
     ],
     width=360, stylesheets = [style2]
 )
-custom_collection = TextInput(title="Or enter custom Collection ID:", width=360,value = "EO:EUM:DAT:MSG:HRSEVIRI", placeholder="e.g., EO:EUM:DAT:MSG:HRSEVIRI", stylesheets = [style2],)
+custom_collection = TextInput(title="Enter custom Collection ID:", width=360,value = "EO:EUM:DAT:MSG:HRSEVIRI", placeholder="e.g., EO:EUM:DAT:MSG:HRSEVIRI", stylesheets = [style2],)
 
 start_date_input = TextInput(title="Start Date (YYYY-MM-DD)", value="2025-08-11", width=160, stylesheets = [style2])
 start_hour_input = TextInput(title="Start Hour (0–23)", value="11", width=120, stylesheets = [style2])
