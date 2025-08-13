@@ -18,7 +18,7 @@ It loads time-sorted frames, applies Satpy composites, overlays coastlines/borde
 
 ---
 
-1) Load your path either with a single .nat file or multiple by adding *.nat at the end (e.g. /home/michael/nats/*nat))
+1) Load your path either with a single .nat file or multiple by adding *.nat at the end (e.g. /home/michael/nats/*.nat))
 2) Select your Composite (and/or Reader if necessary), your area (lat, lon) and the projection (Plate Carree or Geostationary).
 3) Click *Apply*. The files will be loading. It takes some time...
    
