@@ -32,5 +32,5 @@ COPY . .
 EXPOSE 5098
 
 # IMPORTANT: remove the trailing dot!
-# Make sure the filename/case matches exactly (NATEX.py vs natex.py)
+# Make sure the filename/case matches exactly (NATEX.py)
 CMD ["bokeh", "serve", "NATEX.py", "--address", "0.0.0.0", "--port", "5098", "--allow-websocket-origin=*"]
